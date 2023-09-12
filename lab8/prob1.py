@@ -1,140 +1,108 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTextEdit, QMenuBar, QMessageBox
+from PyQt6.QtWidgets import *
 from PyQt6.QtCore import Qt
-
+from PyQt6.QtGui import QAction
 class MainWindow(QMainWindow):
     def __init__(self):
-        super().__init__()
-        self.setWindowTitle('Simple Calculator')
-
-        # Create layout for the main window
+        super(MainWindow, self).__init__()
+        self.setWindowTitle("Simple Calculator")
         self.mainLayout = QVBoxLayout()
 
-        # Create layout for input fields
-        self.numbersLayout = QVBoxLayout()
+
+        self._createMenuBar()
         self._createNumbersLayout()
-
-        # Create layout for buttons
-        self.buttonsLayout = QVBoxLayout()
         self._createButtonsLayout()
-
-        # Create layout for result display
-        self.resultLayout = QVBoxLayout()
         self._createResultLayout()
-
-        # Add layouts to the main layout
+        
         self.mainLayout.addLayout(self.numbersLayout)
         self.mainLayout.addLayout(self.buttonsLayout)
         self.mainLayout.addLayout(self.resultLayout)
 
-        # Create central widget and set the main layout
         self.container = QWidget()
         self.container.setLayout(self.mainLayout)
         self.setCentralWidget(self.container)
 
-        # Create and set up the menu bar
-        self._createMenuBar()
-
-        # Connect button click events to corresponding functions
-        self._handleEvents()
+    def _createMenuBar(self):
+        self.menuBar = self.menuBar()
+        self.menuBar.setNativeMenuBar(False)
+        self.fileMenu = self.menuBar.addMenu("File")
+        self.editMenu = self.menuBar.addMenu("Edit")
+        self.configMenu = self.menuBar.addMenu("Config")
 
     def _createNumbersLayout(self):
-        self.firstNumberLabel = QLabel("Enter the first number:")
-        self.firstNumberEdit = QLineEdit()
-        self.firstNumberEdit.setAlignment(Qt.AlignmentFlag.AlignRight)  # Right-align the input field
+        self.numbersLayout = QGridLayout()
+        self.first_number_label = QLabel("Enter the first number:")
+        self.first_number_edit = QLineEdit()
+        self.first_number_edit.setStyleSheet("background-color: yellow;") 
+        self.second_number_label = QLabel("Enter the second number:")
+        self.second_number_edit = QLineEdit()
+        self.second_number_edit.setStyleSheet("background-color: yellow;")
+        self.first_number_edit.setAlignment(Qt.AlignmentFlag.AlignRight)  
+        self.second_number_edit.setAlignment(Qt.AlignmentFlag.AlignRight)  
 
-        self.secondNumberLabel = QLabel("Enter the second number:")
-        self.secondNumberEdit = QLineEdit()
-        self.secondNumberEdit.setAlignment(Qt.AlignmentFlag.AlignRight)  # Right-align the input field
-
-        self.numbersLayout.addWidget(self.firstNumberLabel)
-        self.numbersLayout.addWidget(self.firstNumberEdit)
-        self.numbersLayout.addWidget(self.secondNumberLabel)
-        self.numbersLayout.addWidget(self.secondNumberEdit)
-
+        self.numbersLayout.addWidget(self.first_number_label,0,0)
+        self.numbersLayout.addWidget(self.first_number_edit,0,1)
+        self.numbersLayout.addWidget(self.second_number_label,1,0)
+        self.numbersLayout.addWidget(self.second_number_edit,1,1)   
+    
     def _createButtonsLayout(self):
-        self.addButton = QPushButton("+")
-        self.subtractButton = QPushButton("-")
-        self.multiplyButton = QPushButton("*")
-        self.divideButton = QPushButton("/")
+        self.buttonsLayout = QGridLayout()
+        names = ['+','-','*','/']
 
-        self.buttonsLayout.addWidget(self.addButton)
-        self.buttonsLayout.addWidget(self.subtractButton)
-        self.buttonsLayout.addWidget(self.multiplyButton)
-        self.buttonsLayout.addWidget(self.divideButton)
+        positions = [(i, j) for i in range(1,6) for j in range(4)]
 
+        for position, name in zip(positions, names):
+            if name == '':
+                continue
+            button = QPushButton(name)
+            button.clicked.connect(self.cal)
+            self.buttonsLayout.addWidget(button, *position)          
+    
+    
     def _createResultLayout(self):
-        self.resultLabel = QLabel("Result:")
-        self.resultTextEdit = QTextEdit()
-        self.resultTextEdit.setReadOnly(True)
-        self.resultTextEdit.setStyleSheet("background-color: lightgreen;")
+        self.resultLayout= QGridLayout()
+        self.result_label = QLabel("Result:")
+        self.result_edit = QTextEdit()
+        self.result_edit.setStyleSheet("background-color: lightgreen;") 
 
-        self.resultLayout.addWidget(self.resultLabel)
-        self.resultLayout.addWidget(self.resultTextEdit)
+        self.resultLayout.addWidget(self.result_label,3,0)
+        self.resultLayout.addWidget(self.result_edit,3,1)
 
-    def _createMenuBar(self):
-        menubar = self.menuBar()
-        file_menu = menubar.addMenu("File")
-        edit_menu = menubar.addMenu("Edit")
-        config_menu = menubar.addMenu("Config")
-
-    def _handleEvents(self):
-        self.addButton.clicked.connect(self.addNumbers)
-        self.subtractButton.clicked.connect(self.subtractNumbers)
-        self.multiplyButton.clicked.connect(self.multiplyNumbers)
-        self.divideButton.clicked.connect(self.divideNumbers)
-
-    def addNumbers(self):
+    def cal(self):
+        op = self.sender().text()
+        ans = 0
         try:
-            num1 = float(self.firstNumberEdit.text())
-            num2 = float(self.secondNumberEdit.text())
-            result = num1 + num2
-            self.resultTextEdit.setPlainText(str(result))
+            n1 = float(self.first_number_edit.text())
+            n2 = float(self.second_number_edit.text())
+            if op == '+':
+                ans = n1 + n2
+            elif op == '-':
+                ans = n1 - n2
+            elif op == '*':
+                ans = n1 * n2
+            elif op == '/':
+                ans = n1 / n2
+            self.result_edit.append(f'{n1} {op} {n2} = {ans}')
+        except ZeroDivisionError:
+            self.result_edit.append('Error: Division by zero')
         except ValueError:
-            self.showErrorMessageBox("Invalid input. Please enter valid numbers.")
+            self.result_edit.append('Enter number plsssssss')
+        
+    def _addEditMenu(self):
+        self.clearAction = QAction("Clear", self)
+        self.copyAction = QAction("Copy", self)
+        self.pasteAction = QAction("Paste", self)
+        self.cutAction = QAction("Cut", self)
+        self.editMenu.addAction(self.clearAction)
+        self.editMenu.addAction(self.copyAction)
+        self.editMenu.addAction(self.pasteAction)
+        self.editMenu.addAction(self.cutAction)
 
-    def subtractNumbers(self):
-        try:
-            num1 = float(self.firstNumberEdit.text())
-            num2 = float(self.secondNumberEdit.text())
-            result = num1 - num2
-            self.resultTextEdit.setPlainText(str(result))
-        except ValueError:
-            self.showErrorMessageBox("Invalid input. Please enter valid numbers.")
 
-    def multiplyNumbers(self):
-        try:
-            num1 = float(self.firstNumberEdit.text())
-            num2 = float(self.secondNumberEdit.text())
-            result = num1 * num2
-            self.resultTextEdit.setPlainText(str(result))
-        except ValueError:
-            self.showErrorMessageBox("Invalid input. Please enter valid numbers.")
 
-    def divideNumbers(self):
-        try:
-            num1 = float(self.firstNumberEdit.text())
-            num2 = float(self.secondNumberEdit.text())
-            if num2 == 0:
-                self.showErrorMessageBox("Error: Division by zero")
-            else:
-                result = num1 / num2
-                self.resultTextEdit.setPlainText(str(result))
-        except ValueError:
-            self.showErrorMessageBox("Invalid input. Please enter valid numbers.")
 
-    def showErrorMessageBox(self, message):
-        msg_box = QMessageBox()
-        msg_box.setWindowTitle("Error")
-        msg_box.setText(message)
-        msg_box.setIcon(QMessageBox.Icon.Critical)
-        msg_box.exec()
-
-def main():
+if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
-
-if __name__ == '__main__':
-    main()
